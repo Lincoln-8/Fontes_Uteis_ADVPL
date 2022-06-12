@@ -1,0 +1,75 @@
+#Include 'totvs.ch'
+#Include 'msobject.ch'
+#Include 'tlpp-core.th'
+#Include 'tlpp-object.th'
+#Include 'tlpp-rest.th'
+
+#Define CRLF Chr(13) + Chr(10)
+
+/*/{Protheus.doc} RelCliForProdInativos
+Relatório com os Clientes, Fornecedores e Produtos 
+inativos em um determinado período em TReport.
+@type function
+@version 1.0
+@author Lincoln Vasconcelos
+@since 12/06/2022
+@return variant, null
+/*/
+User Function RelCliForProdInativos()
+
+/* TReport
+
+-- dias a retroagir 365
+
+--Verificar Clientes sem movimentação a mais de 1 ano pra desativar.
+SELECT * FROM SA1010 SA1
+ WHERE SA1.D_E_L_E_T_ = ' '
+   AND NOT EXISTS ( SELECT * FROM SF2010 SF2
+                     WHERE SF2.D_E_L_E_T_ = ' '
+					   AND SF2.F2_CLIENTE = SA1.A1_COD
+					   AND SF2.F2_LOJA = SA1.A1_LOJA
+                       AND SF2.F2_EMISSAO >= Date() - 365 );
+
+--Verificar Fornecedores sem movimentação a mais de 1 ano para desativar.
+SELECT * FROM SA2010 SA2
+ WHERE SA2.D_E_L_E_T_ = ' '
+   AND NOT EXISTS ( SELECT * FROM SF1010 SF1
+                     WHERE SF1.D_E_L_E_T_ = ' '
+					   AND SF1.F1_FORNECE = SA2.A2_COD
+					   AND SF1.F1_LOJA = SA2.A2_LOJA
+                       AND SF1.F1_DTDIGIT >= '20220101');
+
+--Verificar Produtos que não possuem movimentação a mais de 1 ano para desativar.
+-- FWxFilial('SD1') -- SX2 - X2_MODO = E, C
+
+
+ -- itens das notas fiscais de entrada
+ -- itens das notas fiscais de saída
+ -- movimentos internos produtos
+
+SELECT B1_FILIAL, B1_COD FROM SB1010 SB1
+ WHERE SB1.D_E_L_E_T_ = ' '
+   AND NOT EXISTS (
+		 SELECT DISTINCT * FROM (
+		 SELECT D1_FILIAL FILIAL, D1_COD CODIGO 
+		   FROM SD1010 SD1
+		  WHERE SD1.D_E_L_E_T_ = ' '
+			AND SD1.D1_DTDIGIT >= '20220101'
+		 UNION ALL
+		 SELECT D2_FILIAL FILIAL, D2_COD CODIGO 
+		   FROM SD2010 SD2
+		  WHERE SD2.D_E_L_E_T_ = ' '
+			AND SD2.D2_EMISSAO >= '20220101'
+		 UNION ALL
+		 SELECT D3_FILIAL FILIAL, D3_COD CODIGO 
+		   FROM SD3010 SD3
+		  WHERE SD3.D_E_L_E_T_ = ' '
+			AND SD3.D3_EMISSAO >= '20220101'
+		  ) TMP
+		  WHERE TMP.FILIAL = SB1.B1_FILIAL
+		    AND TMP.CODIGO = SB1.B1_COD
+		)
+
+*/
+
+Return()
